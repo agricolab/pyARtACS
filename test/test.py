@@ -1,4 +1,8 @@
-import matplotlib.pyplot as plt
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+'''Test module for pyArtacs
 
-plt.plot()
-plt.show()
+
+'''
+import os, sys
+sys.path.append(os.path.join(os.path.split(__file__)[0], '..', 'src'))
