@@ -1,3 +1,4 @@
 data/*
 *.pyc
 .spyproject/
+*.egg-info
