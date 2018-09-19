@@ -1,0 +1,22 @@
+Metadata-Version: 1.1
+Name: pyArtacs
+Version: 0.0.1
+Summary: Toolbox for removal of periodic artifacts.
+Home-page: https://github.com/agricolab/pyArtacs
+Author: Robert Guggenberger
+Author-email: robert.guggenberger@uni-tuebingen.de
+License: MIT
+Download-URL: https://github.com/agricolab/pyArtacs.git
+Description: A Python toolbox for removal of artifact caused by transcranial periodic, especially alternating current stimulation (tACS).
+Platform: UNKNOWN
+Classifier: Development Status :: 2 - Pre-Alpha
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: Intended Audience :: Healthcare Industry
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Information Technology
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Scientific/Engineering :: Brain Stimulation
+Classifier: Topic :: Scientific/Engineering :: Signal Processing
