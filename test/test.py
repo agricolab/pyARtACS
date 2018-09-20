@@ -30,6 +30,17 @@ def test_kernel():
     assert (kernel[::period] - np.array([-0.2, -0.2, -0.2, -0.2, -0.2,  1. ,  
             0. ,  0. ,  0. ,  0. ,  0. ])).sum() == 0
     
+    # symetrize a once causal kernel
+    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
+    kernel = _modify_kernel_direction(kernel, 'causal')
+    kernel = _modify_kernel_direction(kernel, 'symmetric')
+    assert kernel.sum() == 0
+    assert kernel.shape[0] == 1001
+    assert (kernel[::period] - np.array([-0.1, -0.1, -0.1, -0.1, -0.1,  1. , 
+                                    -0.1, -0.1, -0.1, -0.1, -0.1])).sum() == 0
+    
+    
+    
     kernel = _create_uniform_symmetric_kernel(freq, fs, width)
     kernel = _modify_kernel_direction(kernel, 'right')
     assert kernel.sum() == 0

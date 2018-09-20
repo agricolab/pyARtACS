@@ -37,7 +37,15 @@ def _modify_kernel_direction(kernel:np.array, direction:str='symmetric'):
         kernel[kernel.shape[0]//2+1:] *= 2
         kernel[:kernel.shape[0]//2-1] = 0        
     elif 'sym' in direction:
-        pass        
+        midpoint = kernel.shape[0]//2
+        right_half = kernel[midpoint+1:].copy()
+        left_half = kernel[0:midpoint].copy()
+        
+        if not  np.all(np.isclose(left_half, right_half[::-1])):
+            kernel[midpoint+1:] += left_half[::-1]
+            kernel[0:midpoint] += right_half[::-1]
+            kernel[midpoint+1:] /= 2
+            kernel[0:midpoint] /= 2
     else:
         raise NotImplementedError('Direction unknown')
         
