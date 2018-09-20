@@ -9,70 +9,108 @@ import numpy as np
 from scipy import signal
 from artacs.tools import resample_by_fs, resample_by_count
 # %%
-def _modify_kernel_mode(kernel:np.array, mode:str='uniform'):
-    #kernel = kernel.copy()
-    width = (kernel[:kernel.shape[0]//2]<0).sum()
-    period = int(np.unique(np.diff(np.where(kernel!=0)[0])))
-    if mode=='uniform':
-        pass
-    elif 'exp' in mode:
-        weights = signal.exponential(((width-1)*2)+1)[:width]
-        weights /= weights.sum() * 2      
-        weights = np.hstack((-weights, 1.0, -weights[::-1]))
-        kernel[::period] = weights        
+def _estimate_prms_from_kernel(kernel):
+    '''estimate period and width from kernel
+    
+    args
+    ----
+    kernel:array
+        kernel from which we estimate the parameters
+        
+    returns
+    -------
+    period:int
+        distance between two weight values in samples
+    width:int
+        number of weight values in each direction
+    direction:str {'left', 'right', 'sym'}
+        direction of kernel
 
-    else:
-        raise NotImplementedError
-    
-    # the kernel should add up to zero
-    assert np.isclose(kernel.sum(), 0.0)
-    return kernel    
-    
-def _modify_kernel_direction(kernel:np.array, direction:str='symmetric'):
-    #kernel = kernel.copy()
-    if direction == 'causal' or direction == 'left':
-        kernel[kernel.shape[0]//2+1:] = 0
-        kernel[:kernel.shape[0]//2-1] *= 2        
-    elif direction == 'right':
-        kernel[kernel.shape[0]//2+1:] *= 2
-        kernel[:kernel.shape[0]//2-1] = 0        
-    elif 'sym' in direction:
-        midpoint = kernel.shape[0]//2
-        right_half = kernel[midpoint+1:].copy()
-        left_half = kernel[0:midpoint].copy()
-        
-        if not  np.all(np.isclose(left_half, right_half[::-1])):
-            kernel[midpoint+1:] += left_half[::-1]
-            kernel[0:midpoint] += right_half[::-1]
-            kernel[midpoint+1:] /= 2
-            kernel[0:midpoint] /= 2
-    else:
-        raise NotImplementedError('Direction unknown')
-        
-    # the kernel should add up to zero
-    assert np.isclose(kernel.sum(), 0.0)
-    return kernel  
-        
-    
-def _create_uniform_symmetric_kernel(freq:int, fs:int, width:int):
-    '''Create a uniform symmetric comb kernel
     '''
+  
+    
+    period = np.unique(np.diff(np.where(kernel!=0)[0]))
+    if len(period) != 1:
+        raise ValueError('Multiple or no periods recognized in kernel' + 
+                         'Was this kernel correctly constructed?')
+    
+    period = int(period)
+    left_width = (kernel[:kernel.shape[0]//2]<0).sum()
+    right_width = (kernel[kernel.shape[0]//2:]<0).sum()        
+    
+    if left_width == 0:
+        direction = 'right'
+        width = right_width
+    elif right_width == 0:
+        direction = 'left'
+        width = left_width
+    elif right_width == left_width:
+        direction = 'sym'
+        width = left_width # both need to be equal, so it doesn't matter
+    else:
+        raise ValueError('Kernel presents with unclear direction.' + 
+                         'Was this kernel correctly constructed?')
+ 
+    return period, width, direction
+
+# %%
+def _weigh_exp(width):
+    'create exponential weights'    
+    weights = signal.exponential(((width-1)*2)+1)[:width]
+    weights /= (weights.sum())    
+    return weights
+
+def _weigh_linear(width):
+    'create linear weights'    
+    weights = np.linspace(0, 1, num=width)
+    weights /= (weights.sum())    
+    return weights
+
+def _weigh_gaussian(width, sigma = 1):
+    'create gaussian weights'    
+    weights = signal.gaussian(width*2, sigma)[0:width]
+    weights /= ( weights.sum())
+    return weights
+
+def _weigh_uniform(width):
+    'create uniform weights'    
+    weights = np.ones(width)
+    weights /= ( weights.sum())
+    return weights
+
+def _weigh_not(width):
+    'create zero weights'
+    weights = np.zeros(width)
+    return weights
+
+def create_kernel(freq:int, fs:int, width:int, 
+                  left_mode:str='uniform', right_mode:str='uniform'):
+    
     in_period = fs/freq    
     period = int(np.ceil(in_period))   
     if in_period != period:
         raise ValueError('Only integer periods are allowed.' + 
                          'Try resampling your signal to higher sampling rate')
     
-    k = np.zeros((period*width*2)+1)
-    k[0::period] = -1/(width*2)
-    k[width*period] = 1
-    return k
-
-def create_kernel(freq:int, fs:int, width:int, 
-                  mode:str='uniform', direction:str='symmetric'):
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_mode(kernel, mode)
-    kernel = _modify_kernel_direction(kernel, direction)
+    weighfoos = {'uniform':_weigh_uniform,
+                 'uni':_weigh_uniform,
+                 'none':_weigh_not,
+                 'zero':_weigh_not,
+                 'gauss':_weigh_gaussian,
+                 'normal':_weigh_gaussian,
+                 'linear':_weigh_linear,
+                 'exp':_weigh_exp,
+                 'exponential':_weigh_exp
+                 }
+    
+    left_weights = weighfoos[left_mode.lower()](width)
+    right_weights = weighfoos[right_mode.lower()](width)[::-1]
+    norm = left_weights.sum() + right_weights.sum()
+    
+    weights = np.hstack((-left_weights/norm, 1.0, -right_weights/norm))
+    midpoint = period*width    
+    kernel = np.zeros((midpoint*2)+1)
+    kernel[::period] = weights   
     return kernel
 
 # %%

@@ -4,7 +4,7 @@
 
 
 '''
-from artacs.kernel import _modify_kernel_direction, _create_uniform_symmetric_kernel, _modify_kernel_mode
+from artacs.kernel import create_kernel
 import numpy as np
 #%%
 def test_kernel():
@@ -12,56 +12,37 @@ def test_kernel():
     fs = 1000
     width = 5
     period = int(np.ceil(fs/freq))
-    base_kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    assert base_kernel.sum() == 0
-    assert base_kernel.shape[0] == 1001
-    
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_direction(kernel, 'symmetric')
+    kernel = create_kernel(freq, fs, width)
     assert kernel.sum() == 0
     assert kernel.shape[0] == 1001
-    assert (kernel[::period] - np.array([-0.1, -0.1, -0.1, -0.1, -0.1,  1. , 
-                                    -0.1, -0.1, -0.1, -0.1, -0.1])).sum() == 0
     
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_direction(kernel, 'causal')
+    kernel = create_kernel(freq, fs, width, 
+                           left_mode='uniform',right_mode ='None')
     assert kernel.sum() == 0
     assert kernel.shape[0] == 1001
-    assert (kernel[::period] - np.array([-0.2, -0.2, -0.2, -0.2, -0.2,  1. ,  
-            0. ,  0. ,  0. ,  0. ,  0. ])).sum() == 0
+    assert np.all(np.isclose(kernel[::period],
+                             np.array([-0.2, -0.2, -0.2, -0.2, -0.2,  1., 
+                                       -0. , -0. , -0. , -0. , -0. ])))
     
-    # symetrize a once causal kernel
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_direction(kernel, 'causal')
-    kernel = _modify_kernel_direction(kernel, 'symmetric')
+    kernel = create_kernel(freq, fs, width, 
+                           left_mode='gauss',right_mode ='exp')
     assert kernel.sum() == 0
     assert kernel.shape[0] == 1001
-    assert (kernel[::period] - np.array([-0.1, -0.1, -0.1, -0.1, -0.1,  1. , 
-                                    -0.1, -0.1, -0.1, -0.1, -0.1])).sum() == 0
+    assert np.all(np.isclose(kernel[::period],
+                             np.array([-1.59837446e-05, -8.72682888e-04,
+                                       -1.75283044e-02, -1.29517624e-01,
+                                       -3.52065405e-01,  1.00000000e+00,
+                                       -3.18204323e-01, -1.17060829e-01,
+                                       -4.30642722e-02, -1.58424604e-02,
+                                       -5.82811548e-03])))
     
-    
-    
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_direction(kernel, 'right')
+    kernel = create_kernel(freq, fs, width, 
+                           left_mode='linear',right_mode ='uniform')
     assert kernel.sum() == 0
     assert kernel.shape[0] == 1001
-    assert (kernel[::period] - np.array([ 0. ,  0. ,  0. ,  0. ,  0. ,  1. , 
-            -0.2, -0.2, -0.2, -0.2, -0.2])).sum() == 0 
-    
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_mode(kernel, 'uniform')
-    assert kernel.sum() == 0
-    assert kernel.shape[0] == 1001
-    assert (kernel-base_kernel).sum()==0
-    
-    kernel = _create_uniform_symmetric_kernel(freq, fs, width)
-    kernel = _modify_kernel_mode(kernel, 'exp')
-    assert kernel.sum() == 0
-    assert kernel.shape[0] == 1001
-    assert np.all(np.isclose(kernel[::period], 
-                 np.array([-0.00582812, -0.01584246, -0.04306427, -0.11706083, 
-                           -0.31820432,  1.        , -0.31820432, -0.11706083, 
-                           -0.04306427, -0.01584246, -0.00582812])))
+    assert np.all(np.isclose(kernel[::period],
+                             np.array([-0.  , -0.05, -0.1 , -0.15, -0.2 ,  1., 
+                                       -0.1 , -0.1 , -0.1 , -0.1 , -0.1 ])))
     
     print('Test successful')
     
