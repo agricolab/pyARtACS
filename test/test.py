@@ -4,7 +4,7 @@
 
 
 '''
-from artacs.kernel import create_kernel, _estimate_prms_from_kernel, _filter_1d, _filter_2d
+from artacs.kernel import create_kernel, _estimate_prms_from_kernel, filter_1d, filter_2d
 import numpy as np
 #%%
 def test_kernel():
@@ -60,7 +60,7 @@ def test_kernel():
     data[data.shape[0]//2] = 1
     kernel = create_kernel(freq, fs, 1, 
                            left_mode='uniform', right_mode ='none')
-    filtered = _filter_1d(data, fs, freq, kernel)
+    filtered = filter_1d(data, fs, freq, kernel)
     assert np.where(filtered==1.0)[0][0] == 1000
     assert np.where(filtered==-1.0)[0][0] == 1100
     
@@ -74,7 +74,7 @@ def test_kernel():
     data = np.sin(2*np.pi*freq*t)    
     kernel = create_kernel(freq, fs, 1, 
                            left_mode='uniform', right_mode ='none')
-    filtered = _filter_1d(data, fs, freq, kernel)
+    filtered = filter_1d(data, fs, freq, kernel)
     assert np.all(np.isclose(filtered[period:], 0, 1e-10))
 
     # test kernel removes sine somewhat well when fs mismatch
@@ -86,7 +86,7 @@ def test_kernel():
                                left_mode='uniform', right_mode ='none')
         t = np.linspace(1/fs, duration_in_s, num=fs*duration_in_s)
         data = np.sin(2*np.pi*freq*t)    
-        filtered = _filter_1d(data, fs, freq, kernel)
+        filtered = filter_1d(data, fs, freq, kernel)
         print('{:3.0f} '.format(freq),end='')
         print(np.max(np.abs(filtered[period*2:])))
         assert np.all(np.isclose(filtered[period*2:], 0, atol=1e-04))
@@ -101,7 +101,7 @@ def test_kernel():
     data = np.vstack((data, data))
     kernel = create_kernel(freq, fs, 1, 
                                left_mode='uniform', right_mode ='none')
-    filtered = _filter_2d(data, fs, freq, kernel)
+    filtered = filter_2d(data, fs, freq, kernel)
     for chan in filtered:
         assert np.all(np.isclose(chan[period:], 0, 1e-10))
 

@@ -7,9 +7,9 @@ This module is shared under a [X11 license](LICENSE).
 Its development is supported by the [BMBF: FKZ 13GW0119](https://www.medizintechnologie.de/fileadmin/pdfs/Projektsteckbriefe_bekanntmachungen/IndiMedtech/13GW0119_Projektsteckbrief_NEU.pdf).
 
 #### Example application
-| Upper Limb Bipolar ECG recording <br> during 11 Hz tACS |<img src="./doc/img/upper_limb_ecg.jpg" width = "400">|
+| Upper Limb Bipolar ECG recording <br> during 11 Hz tACS |<img src="./doc/source/_static/img/upper_limb_ecg.jpg" width = "400">|
 |:----:|:----:|
-|__Recover the physiological signal__ <br>(which is ~120dB weaker than tACS) |<img src="./doc/img/ecg_raw.png" width= "400">|
+|__Recover the physiological signal__ <br>(which is ~120dB weaker than tACS) |<img src="./doc/source/_static/img/ecg_raw.png" width= "400">|
 
 #### Weighted Comb Filter
 Artifact can be _non-stationary_ and _non-sinusoidal_, but is required to be _periodic_. Comb filters natively support only frequencies which are integer divisibles of the sampling frequency. When artacs.kernel.run is used, the signal is automatically resampled, to circumvent this limitation. Note that the method still requires integer frequencies.

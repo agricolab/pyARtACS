@@ -84,7 +84,31 @@ def _weigh_not(width:int) -> ndarray:
 def create_kernel(freq:int, fs:int, width:int, 
                   left_mode:str='uniform', 
                   right_mode:str='uniform')  -> ndarray:
+    '''create kernel from parameters
     
+    args
+    ----
+    freq:int
+        the frequency of the periodic artifact
+    fs:int
+        the sampling rate of the signal to be filtered
+    width:int
+        defines the number of periods in both directions
+    left_mode:str {'uniform', 'none', 'gauss', 'linear', 'exp'}
+        defines the shape of the left (causal) half of the kernel
+    right_mode:str {'uniform', 'none', 'gauss', 'linear', 'exp'}
+        defines the shape of the right half of the kernel
+
+    returns
+    -------
+    kernel:ndarray
+        the kernel for later application
+        
+    .. seealso::
+    
+       :func:`~.filter_1d`
+
+    '''
     in_period = fs/freq    
     period = int(np.ceil(in_period))   
     if in_period != period:
@@ -115,8 +139,30 @@ def create_kernel(freq:int, fs:int, width:int,
     return kernel
 
 # %%
-def _filter_1d(indata, fs:int, freq:int, kernel:ndarray):
+def filter_1d(indata, fs:int, freq:int, kernel:ndarray):
+    ''' filter a one-dimensional dataset with a predefined kernel
+
+    args
+    ----
+    indata:ndarray
+        one-dimensional artifacted signal 
+    freq:int
+        the frequency of the periodic artifact
+    fs:int
+        the sampling rate of the signal to be filtered
+    kernel:ndarray
+        the kernel for later application, see also :func:`~.create_kernel`
+        
+        
+    returns
+    -------
+    filtered:ndarray
+        one-dimensional signal with artifact removed
+        
+    .. seealso::
     
+       :func:`~.filter_2d`
+    ''' 
     in_samples = indata.shape[0]
     in_period = fs/freq
         
@@ -128,7 +174,6 @@ def _filter_1d(indata, fs:int, freq:int, kernel:ndarray):
         period = int(np.ceil(in_period))
         fs = int(period * freq)        
         data = resample_by_fs(indata, up=fs, down=old_fs)        
-    else:
         data = indata
         period = int(in_period)        
 
@@ -151,11 +196,33 @@ def _filter_1d(indata, fs:int, freq:int, kernel:ndarray):
     return filtered
     
 # %%
-def _filter_2d(indata:ndarray, freq:int, fs:int, kernel:ndarray):        
+def filter_2d(indata:ndarray, freq:int, fs:int, kernel:ndarray):        
+    ''' filter a two-dimensional dataset with a predefined kernel
+
+    args
+    ----
+    indata:ndarray
+        two-dimensional artifacted signal, dimensions are channel x samples
+    freq:int
+        the frequency of the periodic artifact
+    fs:int
+        the sampling rate of the signal to be filtered
+    kernel:ndarray
+        the kernel for later application, see also :func:`~.create_kernel`
+        
+        
+    returns
+    -------
+    filtered:ndarray
+        two-dimensional signal with artifact removed
+        
+    .. seealso::
     
+       :func:`~.filter_1d`
+    ''' 
     filtered = np.zeros(indata.shape)
     for idx, chandata in enumerate(indata):        
-        filtered[idx,:] = _filter_1d(chandata, freq, fs, kernel)
+        filtered[idx,:] = filter_1d(chandata, freq, fs, kernel)
     
     return filtered
 #%%
@@ -169,7 +236,7 @@ class KernelFilter():
         self.frequency = frequency
         self.fs = fs
     
-    def filter(self, signal:np.array):
+    def filter(self, signal:np.array) -> ndarray:
         pass
         
     
