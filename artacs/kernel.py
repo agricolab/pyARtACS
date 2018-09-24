@@ -248,7 +248,7 @@ def filter_1d(indata, fs:int, freq:int, kernel:ndarray):
     return filtered
     
 # %%
-def filter_2d(indata:ndarray, fs:int, freq:int, kernel:ndarray):        
+def apply_kernel(indata:ndarray, fs:int, freq:int, kernel:ndarray):        
     ''' filter a two-dimensional dataset with a predefined kernel
 
     args
@@ -277,6 +277,7 @@ def filter_2d(indata:ndarray, fs:int, freq:int, kernel:ndarray):
         filtered[idx,:] = filter_1d(chandata, fs, freq, kernel)
     
     return filtered
+
 #%%
 class CombKernel():
     
@@ -298,7 +299,7 @@ class CombKernel():
                                      self._right_mode)      
        
     def __call__(self, indata:np.array) -> ndarray:
-        return filter_2d(indata=indata, freq=self._freq, fs=self._fs, 
+        return apply_kernel(indata=indata, freq=self._freq, fs=self._fs, 
                          kernel=self._kernel)
     
     def __repr__(self):

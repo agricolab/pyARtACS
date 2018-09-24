@@ -7,11 +7,14 @@ Created on Wed Sep 19 13:31:21 2018
 """
 import numpy as np
 import artacs.tools as tools
+import logging
+logger = logging.Logger(__name__)
 # %%
 class StepwiseRemover():
     
     def __init__(self, fs=1000, freq=None, period_steps=2, 
-                 epsilon=0.01, max_iterations=10):
+                 epsilon=0.01, max_iterations=10, verbose=True):
+        self.verbose = verbose
         self.true_fs = fs
         self.freq = freq
         if freq is not None:
@@ -35,7 +38,7 @@ class StepwiseRemover():
         'resample so that (artifact_period* artifact_frequency) is an integer'
         if self.resample_flag:                   
             period = int(np.ceil(self.true_period))
-            fs = int(period * self.freq)            
+            fs = int(np.ceil(period * self.freq))
             data = tools.resample_by_fs(indata,
                                         up=fs,
                                         down=self.true_fs, 
@@ -43,7 +46,7 @@ class StepwiseRemover():
             self.sample_count = indata.shape[0]
         else:
             data = indata
-            fs = self.fs
+            fs = self.true_fs
             period = int(self.true_period)                
         return data, period, fs
 
@@ -62,21 +65,33 @@ class StepwiseRemover():
         seeds = self.calc_seeds(period)
         return data, period, fs, seeds        
     
+    def __call__(self, indata):
+        return self.process(indata)
+    
     def process(self, indata):
         'process all channels of a dataset'
         if self.true_period is None:
             print('Invalid period length, skipping artifact removal')
             return indata
         
-        num_channels, num_samples = indata.shape
+        if len(indata.shape) == 1:
+            num_channels, num_samples = 1, indata.shape[0]
+            indata = np.atleast_2d(indata)
+        elif len(indata.shape) == 2:
+            num_channels, num_samples = indata.shape
+        else: 
+            raise ValueError('Unspecified dimensionality of the dataset')
         outdata = np.empty((indata.shape))
         outdata.fill(np.nan)
-        print('[',end='')
+        if self.verbose:
+            print('[',end='')
         for chan_idx, chan_data in enumerate(indata):            
             outdata[chan_idx,:] = self.process_channel(chan_data)
-            print('.',end='')
-        print(']',end='\n')
-        return outdata
+            if self.verbose:
+                print('.',end='')
+        if self.verbose:
+            print(']',end='\n')
+        return np.squeeze(outdata)
     
     def process_channel(self, indata):    
         'process a single channels of data'

@@ -4,8 +4,9 @@
 
 
 '''
-from artacs.kernel import create_kernel, _estimate_prms_from_kernel, filter_1d, filter_2d
+from artacs.kernel import create_kernel, _estimate_prms_from_kernel, filter_1d, apply_kernel
 from artacs.kernel import CombKernel
+from artacs.template import StepwiseRemover
 import numpy as np
 #%%
 def test_kernel():
@@ -93,6 +94,8 @@ def test_kernel():
         assert np.all(np.isclose(filtered[period*2:], 0, atol=1e-04))
 
     # test multi-channel filter
+    # we only check for everything after the first period to account for the
+    # settle-in duration of the one-step comb filter
     fs = 1000
     freq = 10    
     period = int(np.ceil(fs/freq))
@@ -102,7 +105,7 @@ def test_kernel():
     data = np.vstack((data, data))
     kernel = create_kernel(freq, fs, 1, 
                                left_mode='uniform', right_mode ='none')
-    filtered = filter_2d(data, fs, freq, kernel)
+    filtered = apply_kernel(data, fs, freq, kernel)
     for chan in filtered:
         assert np.all(np.isclose(chan[period:], 0, 1e-10))
 
@@ -118,6 +121,29 @@ def test_kernel():
         assert np.all(np.isclose(chan[period:], 0, 1e-10))
 
 
+    s = StepwiseRemover(fs=fs, freq=freq)
+    duration_in_s = 2
+    t = np.linspace(1/fs, duration_in_s, num=fs*duration_in_s)
+    data = np.sin(2*np.pi*freq*t)    
+    data = np.vstack((data, data))
+    filtered = s(data)
+    for chan in filtered:
+        assert np.all(np.isclose(chan[:], 0, 1e-10))
+        
+    fs = 5000    
+    duration_in_s = 2
+    for freq in range(10, 21, 1):        
+        s = StepwiseRemover(fs=fs, freq=freq,  period_steps=10)
+        t = np.linspace(1/fs, duration_in_s, num=fs*duration_in_s)
+        nse = np.random.randn(t.shape[0])
+        data = 1000*np.sin(2*np.pi*freq*t) + nse
+        filtered = s(data)
+        print('{:3.0f} '.format(freq),end='')
+        r2 = np.square(np.corrcoef(filtered, nse)[0,1])
+        print(np.max(np.abs(filtered)), r2)
+        assert np.all(r2>0.7071)
+
+    
     print('Test successful')
     
 # %%
