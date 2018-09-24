@@ -5,6 +5,7 @@
 
 '''
 from artacs.kernel import create_kernel, _estimate_prms_from_kernel, filter_1d, filter_2d
+from artacs.kernel import CombKernel
 import numpy as np
 #%%
 def test_kernel():
@@ -93,7 +94,7 @@ def test_kernel():
 
     # test multi-channel filter
     fs = 1000
-    freq = 10
+    freq = 10    
     period = int(np.ceil(fs/freq))
     duration_in_s = 2
     t = np.linspace(1/fs, duration_in_s, num=fs*duration_in_s)
@@ -102,6 +103,17 @@ def test_kernel():
     kernel = create_kernel(freq, fs, 1, 
                                left_mode='uniform', right_mode ='none')
     filtered = filter_2d(data, fs, freq, kernel)
+    for chan in filtered:
+        assert np.all(np.isclose(chan[period:], 0, 1e-10))
+
+
+    k = CombKernel(freq=freq, fs=fs, width=1,
+                   left_mode='uniform', right_mode ='none')
+    duration_in_s = 2
+    t = np.linspace(1/fs, duration_in_s, num=fs*duration_in_s)
+    data = np.sin(2*np.pi*freq*t)    
+    data = np.vstack((data, data))
+    filtered = k(data)
     for chan in filtered:
         assert np.all(np.isclose(chan[period:], 0, 1e-10))
 

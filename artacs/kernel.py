@@ -1,9 +1,59 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Sep 19 13:29:48 2018
+"""Kernel based approaches
 
-@author: rgugg
+This module implements various periodic kernels inspired by comb filters. 
+By using different weighting functions, e.g. uniform  for one or both sides 
+of the kernel, the user can construct comb kernels and apply them on an artifacted
+signal.
+
+Creation
+--------
+
+The following example creates a kernel for a _classical_ causal comb filte for 
+an artifcat with a period of 10Hz and sampled at 1000Hz::
+    
+    kernel = create_kernel(freq=10, fs:1000, width:1, 
+                           left_mode:str='uniform', 
+                           right_mode:str='none')
+    
+or the superposition of moving averages (SMA) filter as discussed e.g. by [1], 
+here for 5 periods at 10 Hz and at 1000Hz sampling rate::
+    
+    kernel = create_kernel(freq=10, fs:1000, width:5, 
+                           left_mode:str='uniform', 
+                           right_mode:str='uniform')
+    
+    
+
+[1]: Kohli, S., Casson, A.J., 2015. Removal of Transcranial a.c. Current Stimulation 
+artifact from simultaneous EEG recordings by superposition of moving averages.
+Conf Proc IEEE Eng Med Biol Soc 2015, 3436–3439. 
+https://doi.org/10.1109/EMBC.2015.7319131
+
+Application
+-----------   
+
+The kernels, once created can be applied to the signal as follows::
+    
+    filtered = filter_2d(indata, freq=20, fs=1000, kernel:ndarray)
+    
+The kernel application is implemented for 2-dimensional data, which calls the 
+1-dimensional implementation in a for-loop. Consider that you have to specify
+the artifact frequency and sampling rate again. This is because the kernel only
+makes sense if the period is an integer divisible of the sampling rate. 
+If it is not, the signal is automaticall up-sampled, processed, and down-sampled.
+This allows to remove the artifact, but is far from perfect. Additionally, 
+the function estimates the period of the kernel, and throws an exception if 
+it does not match the specified frequency. This ensures that the correct kernel
+is used.
+
+Object-oriented implementation
+------------------------------
+
+There exists also an object-oriented implementation.
+
+
 """
 import numpy as np
 from typing import Tuple
@@ -113,7 +163,7 @@ def create_kernel(freq:int, fs:int, width:int,
     period = int(np.ceil(in_period))   
     if in_period != period:
         warn ('Only integer periods are natively supported.' + 
-              'Try resampling to higher sampling rate')
+              'Will auto-resample to higher sampling rate')
         fs = int(period * freq)             
     
     weighfoos = {'uniform':_weigh_uniform,
@@ -173,10 +223,12 @@ def filter_1d(indata, fs:int, freq:int, kernel:ndarray):
         old_fs = fs
         period = int(np.ceil(in_period))
         fs = int(period * freq)        
-        data = resample_by_fs(indata, up=fs, down=old_fs)        
+        data = resample_by_fs(indata, up=fs, down=old_fs)                
+    else:
         data = indata
         period = int(in_period)        
-
+       
+    
     # if the kernel period is not matching the artifact period, 
     # filtering would be off
     kperiod, kwidth =  _estimate_prms_from_kernel(kernel)
@@ -196,7 +248,7 @@ def filter_1d(indata, fs:int, freq:int, kernel:ndarray):
     return filtered
     
 # %%
-def filter_2d(indata:ndarray, freq:int, fs:int, kernel:ndarray):        
+def filter_2d(indata:ndarray, fs:int, freq:int, kernel:ndarray):        
     ''' filter a two-dimensional dataset with a predefined kernel
 
     args
@@ -222,22 +274,34 @@ def filter_2d(indata:ndarray, freq:int, fs:int, kernel:ndarray):
     ''' 
     filtered = np.zeros(indata.shape)
     for idx, chandata in enumerate(indata):        
-        filtered[idx,:] = filter_1d(chandata, freq, fs, kernel)
+        filtered[idx,:] = filter_1d(chandata, fs, freq, kernel)
     
     return filtered
 #%%
-class KernelFilter():
+class CombKernel():
     
-    def __init__(self, frequency:int, fs:int, width:int, mode:str='uniform', direction:str='symmetric'):
-        self.kernel = create_kernel(frequency, fs, width, mode, direction)
-        # create_kernel checks whether frequency and fs are valid amd throws 
-        # an exception if not. Becuase this stops __init__, an additional 
-        # check is therefore not required
-        self.frequency = frequency
-        self.fs = fs
-    
-    def filter(self, signal:np.array) -> ndarray:
-        pass
+    def __init__(self, freq:int, fs:int, width:int, 
+                  left_mode:str='uniform', 
+                  right_mode:str='uniform') -> None:
         
+        self._freq = freq
+        self._fs = fs
+        self._width = width
+        self._left_mode = left_mode
+        self._right_mode = right_mode
+        self._update_kernel()
+
+    def _update_kernel(self):
+        self._kernel = create_kernel(self._freq, self._fs, 
+                                     self._width, 
+                                     self._left_mode, 
+                                     self._right_mode)      
+       
+    def __call__(self, indata:np.array) -> ndarray:
+        return filter_2d(indata=indata, freq=self._freq, fs=self._fs, 
+                         kernel=self._kernel)
     
+    def __repr__(self):
+        return (f'KernelFilter({self._freq}, {self._fs}, {self._width}, ' +
+               f"'{self._left_mode}', '{self._right_mode}')")
     
