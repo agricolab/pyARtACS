@@ -51,7 +51,9 @@ is used.
 Object-oriented implementation
 ------------------------------
 
-There exists also an object-oriented implementation.
+There exists also an object-oriented implementation as follows::
+    
+    kernel = 
 
 
 """
@@ -280,7 +282,15 @@ def apply_kernel(indata:ndarray, fs:int, freq:int, kernel:ndarray):
 
 #%%
 class CombKernel():
+    '''Object-oriented comb kernel filter
     
+    Example to create and apply classical comb kernel::
+        
+        kernel = CombKernel(freq=20, fs=1000, width=1,
+                   left_mode='uniform', right_mode ='none')
+        
+        kernel.apply(artifacted_signal)
+    '''
     def __init__(self, freq:int, fs:int, width:int, 
                   left_mode:str='uniform', 
                   right_mode:str='uniform') -> None:
@@ -298,9 +308,12 @@ class CombKernel():
                                      self._left_mode, 
                                      self._right_mode)      
        
-    def __call__(self, indata:np.array) -> ndarray:
+    def apply(self, indata:ndarray):
         return apply_kernel(indata=indata, freq=self._freq, fs=self._fs, 
                          kernel=self._kernel)
+        
+    def __call__(self, indata:ndarray) -> ndarray:
+        return self.apply(indata)
     
     def __repr__(self):
         return (f'KernelFilter({self._freq}, {self._fs}, {self._width}, ' +

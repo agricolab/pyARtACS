@@ -5,6 +5,7 @@ Created on Wed Sep 19 13:31:21 2018
 
 @author: rgugg
 """
+from numpy import ndarray
 import numpy as np
 import artacs.tools as tools
 import logging
@@ -64,11 +65,11 @@ class StepwiseRemover():
         data, period, fs = self.inbound_resample(valid_data)
         seeds = self.calc_seeds(period)
         return data, period, fs, seeds        
-    
-    def __call__(self, indata):
+                
+    def __call__(self, indata:ndarray) -> ndarray:
         return self.process(indata)
     
-    def process(self, indata):
+    def process(self, indata:ndarray):
         'process all channels of a dataset'
         if self.true_period is None:
             print('Invalid period length, skipping artifact removal')
@@ -93,7 +94,7 @@ class StepwiseRemover():
             print(']',end='\n')
         return np.squeeze(outdata)
     
-    def process_channel(self, indata):    
+    def process_channel(self, indata:ndarray) -> ndarray:    
         'process a single channels of data'
         if self.true_period is None:
             print('Invalid period length, skipping artifact removal')
@@ -117,7 +118,7 @@ class StepwiseRemover():
         
         return outdata
 
-    def _process(self, data, period, fs, seed):
+    def _process(self, data:ndarray, period:int, fs:int, seed:int):
         converged = False
         iteration = 0
         fdata = data.copy()
