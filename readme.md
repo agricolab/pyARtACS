@@ -62,6 +62,7 @@ An alternative is the creation and removal of periodic templates, until the
 artifact power is sufficiently suppressed. This can be achieved using 
 
 ```{python}
+    from artacs import StepwiseRemover
     remover = StepwiseRemover(freq=20, s=1000)    
     filtered_data =  remover.process(artifacted_data)
 ```
