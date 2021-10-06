@@ -18,9 +18,9 @@ Artifacts can be _non-stationary_ and _non-sinusoidal_, but are required to be _
 The following example creates a kernel for a _classical_ causal comb filte for 
 an artifcat with a period of 10Hz and sampled at 1000Hz:
 ```{python}        
-    kernel = create_kernel(freq=10, fs:1000, width:1, 
-                           left_mode:str='uniform', 
-                           right_mode:str='none')
+    kernel = create_kernel(
+        freq=10, fs=1000, width=1, left_mode="uniform", right_mode="none"
+    )
 ```
     
 or the superposition of moving averages (SMA) filter as discussed e.g. by [1], 
