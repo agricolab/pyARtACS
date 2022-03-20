@@ -2,3 +2,6 @@ data/*
 *.pyc
 .spyproject/
 *.egg-info
+doc/build/*
+.vscode
+doc/source/_autosummary/*
